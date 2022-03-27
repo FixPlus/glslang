@@ -877,6 +877,10 @@ public:
     // If resolver is not provided it uses the previous approach
     // and respects auto assignment and offsets.
     bool mapIO(TIoMapResolver* pResolver = nullptr, TIoMapper* pIoMapper = nullptr);
+
+    void enablePartialLinkage() {
+        allowPartialLinkage = true;
+    }
 #endif
 
 protected:
@@ -891,6 +895,7 @@ protected:
     TReflection* reflection;
 #endif
     bool linked;
+    bool allowPartialLinkage = false;
 
 private:
     TProgram(TProgram&);

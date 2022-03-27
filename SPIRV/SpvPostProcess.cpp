@@ -381,6 +381,9 @@ void Builder::postProcessCFG()
             return unreachableDefinitions.count(decoration_id) != 0;
         }),
         decorations.end());
+
+    module.sortFuncs();
+
 }
 
 #ifndef GLSLANG_WEB

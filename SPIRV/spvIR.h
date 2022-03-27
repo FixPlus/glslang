@@ -419,8 +419,15 @@ public:
         return (StorageClass)idToInstruction[typeId]->getImmediateOperand(0);
     }
 
+    void sortFuncs(){
+        std::sort(functions.begin(), functions.end(), [](Function* lhs, Function* rhs){ return rhs->hasBlocks();});
+    }
+
     void dump(std::vector<unsigned int>& out) const
     {
+
+
+
         for (int f = 0; f < (int)functions.size(); ++f)
             functions[f]->dump(out);
     }

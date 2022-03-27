@@ -105,6 +105,7 @@ bool targetHlslFunctionality1 = false;
 bool SpvToolsDisassembler = false;
 bool SpvToolsValidate = false;
 bool NaNClamp = false;
+bool allowPartialLinkage = false;
 
 //
 // Return codes from main/exit().
@@ -477,6 +478,8 @@ void ProcessArguments(std::vector<std::unique_ptr<glslang::TWorkItem>>& workItem
                         lowerword == "auto-map-binding"  ||
                         lowerword == "amb") {
                         Options |= EOptionAutoMapBindings;
+                    } else if(lowerword == "allow-partial-linkage") {
+                        allowPartialLinkage = true;
                     } else if (lowerword == "auto-map-locations" || // synonyms
                                lowerword == "aml") {
                         Options |= EOptionAutoMapLocations;
@@ -1075,6 +1078,9 @@ void CompileAndLinkShaderUnits(std::vector<ShaderCompUnit> compUnits)
     // Program-level processing...
     //
 
+    if(allowPartialLinkage)
+        program.enablePartialLinkage();
+
     // Link
     if (! (Options & EOptionOutputPreprocessed) && ! program.link(messages))
         LinkFailed = true;
@@ -1549,6 +1555,7 @@ void usage()
            "  -x          save binary output as text-based 32-bit hexadecimal numbers\n"
            "  -u<name>:<loc> specify a uniform location override for --aml\n"
            "  --uniform-base <base> set a base to use for generated uniform locations\n"
+           "  --allow-partial-linkage           allow compiled stage to have unresolved symbols.\n"
            "  --auto-map-bindings | --amb       automatically bind uniform variables\n"
            "                                    without explicit bindings\n"
            "  --auto-map-locations | --aml      automatically locate input/output lacking\n"

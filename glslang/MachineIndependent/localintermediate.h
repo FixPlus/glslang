@@ -265,6 +265,7 @@ public:
         needToLegalize(false),
         binaryDoubleOutput(false),
         usePhysicalStorageBuffer(false),
+        allowPartialLinkage(true),
         uniformLocationBase(0)
 #endif
     {
@@ -458,6 +459,12 @@ public:
     // Linkage related
     void addSymbolLinkageNodes(TIntermAggregate*& linkage, EShLanguage, TSymbolTable&);
     void addSymbolLinkageNode(TIntermAggregate*& linkage, const TSymbol&);
+    void addAllowPartialLinkage() {
+        allowPartialLinkage = true;
+    }
+    bool allowedPartialLinkage() const {
+        return allowPartialLinkage;
+    }
 
     void setUseStorageBuffer()
     {
@@ -927,6 +934,7 @@ public:
 protected:
     EShSource source;            // source language, known a bit later
     bool useVulkanMemoryModel;
+    bool allowPartialLinkage;
     int invocations;
     int vertices;
     TLayoutGeometry inputPrimitive;

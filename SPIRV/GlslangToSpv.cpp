@@ -235,7 +235,7 @@ protected:
     bool inEntryPoint;
     bool entryPointTerminated;
     bool linkageOnly;                  // true when visiting the set of objects in the AST present only for establishing interface, whether or not they were statically used
-    std::set<spv::Id> iOSet;           // all input/output variables from either static use or declaration of interface
+    std::map<spv::Id, const char*> iOSet;           // all input/output variables from either static use or declaration of interface
     const glslang::TIntermediate* glslangIntermediate;
     bool nanMinMaxClamp;               // true if use NMin/NMax/NClamp instead of FMin/FMax/FClamp
     spv::Id stdBuiltins;
@@ -1630,8 +1630,15 @@ void TGlslangToSpvTraverser::finishSpv()
     }
 
     // finish off the entry-point SPV instruction by adding the Input/Output <id>
-    for (auto it = iOSet.cbegin(); it != iOSet.cend(); ++it)
-        entryPoint->addIdOperand(*it);
+    if(shaderEntry) {
+        for (auto it = iOSet.cbegin(); it != iOSet.cend(); ++it)
+            entryPoint->addIdOperand((*it).first);
+    } else{
+        for (auto& symbol: iOSet){
+            builder.addDecoration(symbol.first, spv::DecorationLinkageAttributes, symbol.second, spv::LinkageType::LinkageTypeExport);
+        }
+
+    }
 
     // Add capabilities, extensions, remove unneeded decorations, etc.,
     // based on the resulting SPIR-V.
@@ -1681,7 +1688,7 @@ void TGlslangToSpvTraverser::visitSymbol(glslang::TIntermSymbol* symbol)
             // Starting with SPIR-V 1.4, we want all globals.
             if ((glslangIntermediate->getSpv().spv >= glslang::EShTargetSpv_1_4 && sc != spv::StorageClassFunction) ||
                 (sc == spv::StorageClassInput || sc == spv::StorageClassOutput)) {
-                iOSet.insert(id);
+                iOSet.emplace(id, symbol->getName().c_str());
             }
         }
 

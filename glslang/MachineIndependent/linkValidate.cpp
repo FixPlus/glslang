@@ -699,7 +699,7 @@ void TIntermediate::finalCheck(TInfoSink& infoSink, bool keepUncalled)
     if (getTreeRoot() == nullptr)
         return;
 
-    if (numEntryPoints < 1) {
+    if (numEntryPoints < 1 && !allowPartialLinkage) {
         if (getSource() == EShSourceGlsl)
             error(infoSink, "Missing entry point: Each stage requires one entry point");
         else
@@ -707,11 +707,15 @@ void TIntermediate::finalCheck(TInfoSink& infoSink, bool keepUncalled)
             // conclusion of issue #588 was this. In order to force the generation of
             // an entry point we need to increment the entry point count here.
             warn(infoSink, "Entry point not found");
-            incrementEntryPointCount();
+        incrementEntryPointCount();
     }
 
     // recursion and missing body checking
     checkCallGraphCycles(infoSink);
+
+    if(allowPartialLinkage)
+        keepUncalled = true;
+
     checkCallGraphBodies(infoSink, keepUncalled);
 
     // overlap/alias/missing I/O, etc.
@@ -1011,27 +1015,31 @@ void TIntermediate::checkCallGraphBodies(TInfoSink& infoSink, bool keepUncalled)
         }
     } while (changed);
 
-    // Any call-graph node set to visited but without a callee body is an error.
-    for (TGraph::iterator call = callGraph.begin(); call != callGraph.end(); ++call) {
-        if (call->visited) {
-            if (call->calleeBodyPosition == -1) {
-                error(infoSink, "No function definition (body) found: ");
-                infoSink.info << "    " << call->callee << "\n";
-            } else
-                reachable[call->calleeBodyPosition] = true;
+    // Any call-graph node set to visited but without a callee body is an error if partial linkage not allowed.
+    if(!allowPartialLinkage) {
+        for (TGraph::iterator call = callGraph.begin(); call != callGraph.end(); ++call) {
+            if (call->visited) {
+                if (call->calleeBodyPosition == -1) {
+                    error(infoSink, "No function definition (body) found: ");
+                    infoSink.info << "    " << call->callee << "\n";
+                } else
+                    reachable[call->calleeBodyPosition] = true;
+            }
         }
     }
 
     // Bodies in the AST not reached by the call graph are dead;
     // clear them out, since they can't be reached and also can't
     // be translated further due to possibility of being ill defined.
+
     if (! keepUncalled) {
         for (int f = 0; f < (int)functionSequence.size(); ++f) {
-            if (! reachable[f])
+            if (!reachable[f] && functionSequence[f]->getAsAggregate()->getOp() == glslang::EOpFunction)
                 functionSequence[f] = nullptr;
         }
         functionSequence.erase(std::remove(functionSequence.begin(), functionSequence.end(), nullptr), functionSequence.end());
     }
+
 }
 
 //
