@@ -420,7 +420,9 @@ public:
     }
 
     void sortFuncs(){
-        std::sort(functions.begin(), functions.end(), [](Function* lhs, Function* rhs){ return rhs->hasBlocks();});
+        std::sort(functions.begin(), functions.end(), [](Function* lhs, Function* rhs){
+            return !lhs->hasBlocks() && rhs->hasBlocks();
+        });
     }
 
     void dump(std::vector<unsigned int>& out) const
